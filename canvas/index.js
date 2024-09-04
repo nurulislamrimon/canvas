@@ -14,42 +14,26 @@ const mouse = {
   y: innerHeight,
 };
 
-const gravity = 1;
-const fraction = 0.95;
-
 const colorArray = ["red", "blue", "yellow", "gray", "green"];
-
-const randomIntFromRange = function (min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-};
 
 const randomColor = function (colorArray) {
   return colorArray[Math.floor(Math.random() * colorArray.length)];
 };
 
+const getDistance = (x1, y1, x2, y2) => {
+  let xDistance = x2 - x1;
+  let yDistance = y2 - y1;
+  return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+};
+
 // circles---------------------------------
-function Ball(x, y, dx, dy, radius, color) {
+function Circle(x, y, radius, color) {
   this.x = x;
   this.y = y;
-  this.dx = dx;
-  this.dy = dy;
   this.radius = radius;
   this.color = color;
 
   this.update = function () {
-    if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
-      this.dx = -this.dx;
-    }
-    if (this.y + this.radius > canvas.height) {
-      this.dy = -this.dy * fraction;
-    } else {
-      // this is the main reason of gravity effect
-      // It increase by 1. At last it becomes faster, and it switch with that speed. like: 16 -> -15
-      this.dy += gravity;
-    }
-
-    this.x += this.dx;
-    this.y += this.dy;
     this.draw();
   };
 
@@ -62,26 +46,17 @@ function Ball(x, y, dx, dy, radius, color) {
   };
 }
 
+let circle1;
+let circle2;
 // implimentation
-let ballArray = [];
 function init() {
-  ballArray = [];
-  for (let i = 0; i < 50; i++) {
-    const radius = randomIntFromRange(5, 20);
-    const x = randomIntFromRange(0, canvas.width - radius);
-    const y = randomIntFromRange(0, canvas.height);
-
-    ballArray.push(
-      new Ball(
-        x,
-        y,
-        randomIntFromRange(1, 5),
-        randomIntFromRange(5, 20),
-        radius,
-        randomColor(colorArray)
-      )
-    );
-  }
+  circle1 = new Circle(
+    window.innerWidth / 2,
+    window.innerHeight / 2,
+    50,
+    "black"
+  );
+  circle2 = new Circle(undefined, undefined, 20, "red");
 }
 init();
 
@@ -89,8 +64,23 @@ init();
 function animate() {
   requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillText("hello", mouse.x, mouse.y);
-  ballArray.forEach((ball) => ball.update());
+  // ctx.fillText("hello", mouse.x, mouse.y);
+  // print circle 1
+  circle1.update();
+
+  // change propertise of circle2
+  circle2.x = mouse.x;
+  circle2.y = mouse.y;
+  circle2.update();
+
+  if (
+    getDistance(circle1.x, circle1.y, circle2.x, circle2.y) <
+    circle1.radius + circle2.radius
+  ) {
+    circle1.color = circle2.color;
+  } else {
+    circle1.color = "black";
+  }
 }
 animate();
 
