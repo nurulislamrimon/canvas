@@ -10,14 +10,18 @@ const ctx = canvas.getContext("2d");
 
 // mouse dimentions-------------------
 const mouse = {
-  x: innerWidth,
-  y: innerHeight,
+  x: innerWidth / 2,
+  y: innerHeight / 2,
 };
 
 const colorArray = ["red", "blue", "yellow", "gray", "green"];
 
 const randomColor = function (colorArray) {
   return colorArray[Math.floor(Math.random() * colorArray.length)];
+};
+
+const randomIntFromRange = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1) + min);
 };
 
 const getDistance = (x1, y1, x2, y2) => {
@@ -27,7 +31,7 @@ const getDistance = (x1, y1, x2, y2) => {
 };
 
 // circles---------------------------------
-function Circle(x, y, radius, color) {
+function Particle(x, y, radius, color) {
   this.x = x;
   this.y = y;
   this.radius = radius;
@@ -40,23 +44,36 @@ function Circle(x, y, radius, color) {
   this.draw = function () {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-    ctx.fillStyle = this.color;
-    ctx.fill();
+    ctx.strokeStyle = this.color;
+    ctx.stroke();
     ctx.closePath();
   };
 }
 
-let circle1;
-let circle2;
 // implimentation
+let particles = [];
 function init() {
-  circle1 = new Circle(
-    window.innerWidth / 2,
-    window.innerHeight / 2,
-    50,
-    "black"
-  );
-  circle2 = new Circle(undefined, undefined, 20, "red");
+  for (let i = 0; i < 10; i++) {
+    const radius = 20;
+    let x = randomIntFromRange(radius, window.innerWidth - radius);
+    let y = randomIntFromRange(radius, window.innerHeight - radius);
+
+    if (i !== 0) {
+      for (let j = 0; j < particles.length; j++) {
+        if (
+          getDistance(x, y, particles[j].x, particles[j].y) -
+            (radius + particles[j].radius) <
+          0
+        ) {
+          x = randomIntFromRange(radius, window.innerWidth - radius);
+          y = randomIntFromRange(radius, window.innerHeight - radius);
+
+          j = -1;
+        }
+      }
+    }
+    particles.push(new Particle(x, y, radius, randomColor(colorArray)));
+  }
 }
 init();
 
@@ -64,23 +81,11 @@ init();
 function animate() {
   requestAnimationFrame(animate);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // ctx.fillText("hello", mouse.x, mouse.y);
-  // print circle 1
-  circle1.update();
-
-  // change propertise of circle2
-  circle2.x = mouse.x;
-  circle2.y = mouse.y;
-  circle2.update();
-
-  if (
-    getDistance(circle1.x, circle1.y, circle2.x, circle2.y) <
-    circle1.radius + circle2.radius
-  ) {
-    circle1.color = circle2.color;
-  } else {
-    circle1.color = "black";
-  }
+  ctx.fillText("Collision", mouse.x, mouse.y);
+  // print the particles
+  particles.forEach((particle) => {
+    particle.update();
+  });
 }
 animate();
 
