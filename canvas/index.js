@@ -5,91 +5,96 @@ const canvas = document.querySelector("canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// context
+// context----------------------------
 const ctx = canvas.getContext("2d");
 
-// mouse dimentions
+// mouse dimentions-------------------
 const mouse = {
-  x: undefined,
-  y: undefined,
+  x: innerWidth,
+  y: innerHeight,
 };
+
+const gravity = 1;
+const fraction = 0.95;
 
 const colorArray = ["red", "blue", "yellow", "gray", "green"];
 
-const minRadius = 2;
-const maxRadius = 100;
+const randomIntFromRange = function (min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
 
-// circle instance
-function Circle(x, y, dx, dy, radius) {
+const randomColor = function (colorArray) {
+  return colorArray[Math.floor(Math.random() * colorArray.length)];
+};
+
+// circles---------------------------------
+function Ball(x, y, dx, dy, radius, color) {
   this.x = x;
   this.y = y;
-  this.radius = radius;
-  this.minRadius = radius;
-
   this.dx = dx;
   this.dy = dy;
-  this.color = colorArray[Math.floor(Math.random() * colorArray.length)];
+  this.radius = radius;
+  this.color = color;
+
+  this.update = function () {
+    if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+      this.dx = -this.dx;
+    }
+    if (this.y + this.radius > canvas.height) {
+      this.dy = -this.dy * fraction;
+    } else {
+      // this is the main reason of gravity effect
+      // It increase by 1. At last it becomes faster, and it switch with that speed. like: 16 -> -15
+      this.dy += gravity;
+    }
+
+    this.x += this.dx;
+    this.y += this.dy;
+    this.draw();
+  };
 
   this.draw = function () {
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
     ctx.fillStyle = this.color;
     ctx.fill();
-  };
-  this.update = function () {
-    // check position to prevent get lost
-    if (this.x + this.radius > innerWidth || this.x - this.radius < 0) {
-      this.dx = -this.dx;
-    }
-
-    if (this.y + this.radius > innerHeight || this.y - this.radius < 0) {
-      this.dy = -this.dy;
-    }
-    // increase the axis
-    this.x += this.dx;
-    this.y += this.dy;
-
-    // interactivity
-    if (
-      mouse.x - this.x < 50 &&
-      mouse.x - this.x > -50 &&
-      mouse.y - this.y < 50 &&
-      mouse.y - this.y > -50
-    ) {
-      if (this.radius < maxRadius) {
-        this.radius += 1;
-      }
-    } else if (this.radius > this.minRadius) {
-      this.radius -= 1;
-    }
-
-    this.draw();
+    ctx.closePath();
   };
 }
 
+// implimentation
+let ballArray = [];
 function init() {
-  const circleArray = [];
+  ballArray = [];
+  for (let i = 0; i < 50; i++) {
+    const radius = randomIntFromRange(5, 20);
+    const x = randomIntFromRange(0, canvas.width - radius);
+    const y = randomIntFromRange(0, canvas.height);
 
-  for (let i = 0; i < 100; i++) {
-    let x = Math.random() * innerWidth;
-    let y = Math.random() * innerHeight;
-
-    let dx = Math.random() * 0.3 * 8;
-    let dy = Math.random() * 0.3 * 8;
-    let radius = Math.random() * 0.3 + 1;
-    circleArray.push(new Circle(x, y, dx, dy, radius));
+    ballArray.push(
+      new Ball(
+        x,
+        y,
+        randomIntFromRange(1, 5),
+        randomIntFromRange(5, 20),
+        radius,
+        randomColor(colorArray)
+      )
+    );
   }
-
-  const animate = () => {
-    requestAnimationFrame(animate);
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
-    circleArray.forEach((circle) => {
-      circle.update();
-    });
-  };
-  animate();
 }
+init();
 
+// animation loop----------------------------------
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillText("hello", mouse.x, mouse.y);
+  ballArray.forEach((ball) => ball.update());
+}
+animate();
+
+// events---------------------------------------
 window.addEventListener("mousemove", function (e) {
   mouse.x = e.x;
   mouse.y = e.y;
@@ -100,5 +105,3 @@ window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   init();
 });
-
-init();
