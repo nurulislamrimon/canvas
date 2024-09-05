@@ -30,6 +30,42 @@ const getDistance = (x1, y1, x2, y2) => {
   return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
 };
 
+let particles = [];
+
+const resolveCollision = (particle1, particle2) => {
+  const xVelocityDiff = particle1.velocity.x - particle2.velocity.x;
+  const yVelocityDiff = particle1.velocity.y - particle2.velocity.y;
+  const xDist = particle1.x - particle2.x;
+  const yDist = particle1.y - particle2.y;
+  if (xVelocityDiff * xDist + yVelocityDiff * yDist >= 0) {
+    const angle = -Math.atan2(yDist, xDist);
+    // mass
+    const m1 = particle1.mass;
+    const m2 = particle2.mass;
+    // velocity before equation
+    const u1 = rotate(particle1.velocity, angle);
+    const u2 = rotate(particle2.velocity, angle);
+    // velocity after equation
+    const v1 = {
+      x: u1.x * ((m1 - m2) / (m1 + m2)) + u2.x * ((2 * m2) / (m1 + m2)),
+      y: u1.y,
+    };
+    const v2 = {
+      x: u2.x * ((2 * m1) / (m1 + m2)) + u2.x * ((m2 - m1) / (m1 + m2)),
+      y: u2.y,
+    };
+    // rotate back
+    const vFinal1 = rotate(v1, -angle);
+    const vFinal2 = rotate(v2, -angle);
+
+    particle1.velocity.x = vFinal1.x;
+    particle1.velocity.y = vFinal1.y;
+
+    particle2.velocity.x = vFinal2.x;
+    particle2.velocity.y = vFinal2.y;
+  }
+};
+
 // circles---------------------------------
 function Particle(x, y, radius, color) {
   this.x = x;
@@ -37,8 +73,34 @@ function Particle(x, y, radius, color) {
   this.radius = radius;
   this.color = color;
 
+  this.velocity = {
+    x: Math.random() - 2,
+    y: Math.random() - 2,
+  };
   this.update = function () {
     this.draw();
+
+    for (let i = 0; i < particles.length; i++) {
+      if (this === particles[i]) continue;
+
+      if (
+        getDistance(this.x, this.y, particles[i].x, particles[i].y) -
+          (this.radius + particles[i].radius) <
+        0
+      ) {
+        this.color = particles[i].color;
+        resolveCollision(this, particles[i]);
+      }
+    }
+
+    if (this.x - this.radius <= 0 || this.x + this.radius >= innerWidth) {
+      this.velocity.x = -this.velocity.x;
+    }
+    if (this.y - this.radius <= 0 || this.y + this.radius >= innerHeight) {
+      this.velocity.y = -this.velocity.y;
+    }
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
   };
 
   this.draw = function () {
@@ -51,7 +113,6 @@ function Particle(x, y, radius, color) {
 }
 
 // implimentation
-let particles = [];
 function init() {
   for (let i = 0; i < 10; i++) {
     const radius = 20;
